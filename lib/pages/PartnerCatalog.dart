@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ovpiere_movil/pages/EditOrder.dart';
 import '../model/Partner.dart';
 
 class PartnerCatalog extends StatefulWidget {
@@ -13,6 +14,7 @@ class PartnerCatalog extends StatefulWidget {
 
 class _PartnerCatalogState extends State<PartnerCatalog> {
   bool _isSearching = false;
+  bool _isPressed = false;
   final myTextController = TextEditingController();
 
   final List<Partner> allPartners = [
@@ -33,6 +35,7 @@ class _PartnerCatalogState extends State<PartnerCatalog> {
     super.initState();
     setState(() {
       _isSearching = false;
+      _isPressed = false;
       _foundPartners = allPartners;
     });
   }
@@ -108,7 +111,6 @@ class _PartnerCatalogState extends State<PartnerCatalog> {
   void onSearch() {
     List<Partner> result = [];
     if(myTextController.text.isNotEmpty){
-      print('Second text field: ${myTextController.text}');
       result = allPartners.where((partner) => partner.name.toLowerCase().contains(myTextController.text.toLowerCase())).toList();
     }else{
       result = allPartners;
@@ -130,6 +132,7 @@ class _PartnerCatalogState extends State<PartnerCatalog> {
                     itemCount: _foundPartners.length,
                     itemBuilder: (context, index) {
                       return Card(
+                        color: _isPressed ? Colors.blueAccent : Colors.white,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
@@ -145,6 +148,13 @@ class _PartnerCatalogState extends State<PartnerCatalog> {
                               ),
                               title: Text(_foundPartners[index].name),
                               subtitle: Text(_foundPartners[index].description),
+                              onTap: (){
+                                Navigator.push(context,
+                                  MaterialPageRoute(
+                                    builder: (context) => EditOrder(partner: _foundPartners[index]),
+                                  )
+                                );
+                              },
                             ),
                           ],
                         ),

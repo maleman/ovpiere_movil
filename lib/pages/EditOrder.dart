@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:ovpiere_movil/model/Order.dart';
+import 'package:ovpiere_movil/model/Partner.dart';
 
 class EditOrder extends StatefulWidget{
-  const EditOrder({Key? key}) : super(key: key);
+  const EditOrder({Key? key, Partner? partner, Order? order}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _EditOrdersState();
