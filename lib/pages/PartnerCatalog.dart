@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:ovpiere_movil/pages/EditOrder.dart';
+
+import 'package:ovpiere_movil/pages/ProductCatalog.dart';
 import '../model/Partner.dart';
 
 class PartnerCatalog extends StatefulWidget {
@@ -151,7 +152,7 @@ class _PartnerCatalogState extends State<PartnerCatalog> {
                               onTap: (){
                                 Navigator.push(context,
                                   MaterialPageRoute(
-                                    builder: (context) => EditOrder(partner: _foundPartners[index]),
+                                    builder: (context) => ProductCatalog(partner: _foundPartners[index]),
                                   )
                                 );
                               },
