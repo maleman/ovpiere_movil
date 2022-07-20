@@ -4,7 +4,7 @@ import 'package:ovpiere_movil/model/Partner.dart';
 import 'package:ovpiere_movil/model/Product.dart';
 
 import '../model/Order.dart';
-import 'EditOrder.dart';
+import 'PartnerCatalog.dart';
 
 class Orders extends StatefulWidget {
   const Orders({Key? key, required this.title}) : super(key: key);
@@ -34,7 +34,7 @@ class _OrdersState extends State<Orders> {
     //setState(() => _counter++);
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const EditOrder()),
+      MaterialPageRoute(builder: (context) => const PartnerCatalog()),
     );
   }
 
