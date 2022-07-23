@@ -1,5 +1,7 @@
+import 'dart:collection';
 import 'package:flutter/material.dart';
-import 'package:ovpiere_movil/model/OrderLine.dart';
+import 'package:flutter/services.dart';
+import 'package:ovpiere_movil/widgets/AddProductModalBottomSheet.dart';
 import '../model/Order.dart';
 import '../model/Partner.dart';
 import '../model/Product.dart';
@@ -16,6 +18,7 @@ class ProductCatalog extends StatefulWidget {
 }
 
 class _ProductCatalogState extends State<ProductCatalog> {
+  int _quantity = 0;
   bool _isSearching = false;
   final myTextController = TextEditingController();
 
@@ -25,10 +28,14 @@ class _ProductCatalogState extends State<ProductCatalog> {
     const Product('C', 'C001', 'C fur Mann', '7.90'),
     const Product('D', 'D001', 'D fur Frau', '15.90'),
     const Product('E', 'E001', 'E fur kinder', '3.90'),
+    const Product('F', 'F001', 'F fur kinder', '3.90'),
+    const Product('G', 'G001', 'G fur Alles', '4.78'),
   ];
 
   List<Product> _foundProducts = [];
-  List<OrderLine> _cartProducts = [];
+  final HashMap _cartProducts = HashMap<Product, int>();
+
+  var textEditingControllerQty = TextEditingController();
 
   @override
   void initState() {
@@ -50,7 +57,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
         child: GridView.builder(
           shrinkWrap: true,
           padding: const EdgeInsets.symmetric(horizontal: 30),
-          itemCount: 4,
+          itemCount: _foundProducts.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             childAspectRatio: 1.0,
@@ -60,50 +67,50 @@ class _ProductCatalogState extends State<ProductCatalog> {
           ),
           itemBuilder: (context, index) {
             return Card(
-              child: GestureDetector(
-                onTap: () {
-                  print("tapped on container");
-                },
-                child: Container(
-                  height: 200,
-                  decoration:
-                  BoxDecoration(borderRadius: BorderRadius.circular(20)),
-                  margin: const EdgeInsets.all(5),
-                  padding: const EdgeInsets.all(5),
-                  child: Stack(
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(
-                            child: Image.asset(
-                              'images/png/maleman.png',
-                              fit: BoxFit.fill,
+                elevation: 10.0,
+                child: GestureDetector(
+                  onTap: () {
+                    _addProductToCart(_foundProducts[index]);
+                  },
+                  child: Container(
+                    height: 200,
+                    decoration:
+                        BoxDecoration(borderRadius: BorderRadius.circular(20)),
+                    margin: const EdgeInsets.all(5),
+                    padding: const EdgeInsets.all(5),
+                    child: Stack(
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: Image.asset(
+                                'images/png/maleman.png',
+                                fit: BoxFit.cover,
+                              ),
                             ),
-                          ),
-                          Text(
-                            _foundProducts[index].code,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                            Text(
+                              _foundProducts[index].code,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          Row(
-                            children: [
-                              Text(_foundProducts[index].description,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                  ))
-                            ],
-                          )
-                        ],
-                      )
-                    ],
+                            Row(
+                              children: [
+                                Text(_foundProducts[index].description,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ))
+                              ],
+                            )
+                          ],
+                        )
+                      ],
+                    ),
                   ),
-                ),
-              )
-            );
+                ));
           },
         ),
       ),
@@ -140,7 +147,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
             cancelSearch();
           }),
       title: Padding(
-        padding: const EdgeInsets.only(bottom: 10, right: 10),
+        padding: const EdgeInsets.only(bottom: 5, right: 5),
         child: TextField(
           controller: searchController,
           onEditingComplete: () {
@@ -195,5 +202,142 @@ class _ProductCatalogState extends State<ProductCatalog> {
   void dispose() {
     myTextController.dispose();
     super.dispose();
+  }
+
+  void _addProductToCart(Product product) async {
+    int quantity = 0;
+    if (_cartProducts.containsKey(product)) {
+      quantity = _cartProducts[product];
+    }
+    int? qty = await showModalBottomSheet<int>(
+        context: context,
+        builder: (BuildContext context) {
+          return AddProductModalBottomSheet(
+              product: product, quantity: quantity);
+        });
+
+    if (qty != null) {
+      int q = (qty);
+      setState(() {
+        _cartProducts[product] = q;
+      });
+    }
+  }
+
+  void _addOrderLine(BuildContext context, Product product) async {
+    int quantity = 0;
+    if (_cartProducts.containsKey(product)) {
+      quantity = _cartProducts[product];
+    }
+    setState(() {
+      _quantity = quantity;
+    });
+    textEditingControllerQty.text = _quantity.toString();
+    int? qty = await showModalBottomSheet<int>(
+      context: context,
+      builder: (BuildContext context) {
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: MediaQuery.of(context).size.width,
+            minHeight: MediaQuery.of(context).size.height / 2,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const Padding(
+                padding: EdgeInsets.all(10.0),
+                child: Text(
+                  "Agregar producto",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(5.0),
+                child: Text(
+                  '${product.code} - ${product.description}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: <Widget>[
+                    IconButton(
+                        iconSize: 40.0,
+                        icon: const Icon(Icons.remove),
+                        onPressed: () {
+                          if (_quantity > 0) {
+                            setState(() => _quantity--);
+                            textEditingControllerQty.text =
+                                _quantity.toString();
+                          }
+                        }),
+                    SizedBox(
+                      width: 100,
+                      height: 60,
+                      child: TextField(
+                        textAlign: TextAlign.center,
+                        keyboardType: TextInputType.number,
+                        onChanged: (text) {
+                          setState(() {
+                            int? q = int.tryParse(text);
+                            if (q != null && q > 0) {
+                              setState(() => _quantity = q);
+                            }
+                          });
+                        },
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        controller: textEditingControllerQty,
+                      ),
+                    ),
+
+                    /* Text(
+                      _quantity.toString(),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),*/
+                    IconButton(
+                      iconSize: 40.0,
+                      icon: const Icon(Icons.add),
+                      onPressed: () {
+                        setState(() => _quantity++);
+                        textEditingControllerQty.text = _quantity.toString();
+                      },
+                    )
+                  ],
+                ),
+              ),
+              RaisedButton(
+                color: Colors.lightBlue,
+                textColor: Colors.white,
+                child: Text(
+                  "Agregar".toUpperCase(),
+                ),
+                onPressed: () => Navigator.of(context).pop(_quantity),
+              )
+            ],
+          ),
+        );
+      },
+    );
+
+    if (qty != null) {
+      int q = (qty);
+      setState(() {
+        _cartProducts[product] = q;
+      });
+    }
   }
 }
