@@ -1,10 +1,10 @@
 import 'dart:collection';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:ovpiere_movil/widgets/AddProductModalBottomSheet.dart';
 import '../model/Order.dart';
 import '../model/Partner.dart';
 import '../model/Product.dart';
+import '../widget/AddProductModalBottomSheet.dart';
+import '../widget/NoNamedIcon.dart';
 
 class ProductCatalog extends StatefulWidget {
   const ProductCatalog({Key? key, Partner? partner, Order? order})
@@ -18,7 +18,6 @@ class ProductCatalog extends StatefulWidget {
 }
 
 class _ProductCatalogState extends State<ProductCatalog> {
-  int _quantity = 0;
   bool _isSearching = false;
   final myTextController = TextEditingController();
 
@@ -128,11 +127,14 @@ class _ProductCatalogState extends State<ProductCatalog> {
             onPressed: () {
               startSearchFunction();
             }),
-        IconButton(
-            icon: const Icon(Icons.shopping_cart),
-            onPressed: () {
-              _gotoOrderDetail();
-            }),
+        NoNamedIcon(
+          onTap: () {
+            _gotoOrderDetail();
+          },
+          iconData: Icons.shopping_cart,
+          text: '',
+          notificationCount: _cartProducts.length,
+        ),
       ],
     );
   }
@@ -215,123 +217,6 @@ class _ProductCatalogState extends State<ProductCatalog> {
           return AddProductModalBottomSheet(
               product: product, quantity: quantity);
         });
-
-    if (qty != null) {
-      int q = (qty);
-      setState(() {
-        _cartProducts[product] = q;
-      });
-    }
-  }
-
-  void _addOrderLine(BuildContext context, Product product) async {
-    int quantity = 0;
-    if (_cartProducts.containsKey(product)) {
-      quantity = _cartProducts[product];
-    }
-    setState(() {
-      _quantity = quantity;
-    });
-    textEditingControllerQty.text = _quantity.toString();
-    int? qty = await showModalBottomSheet<int>(
-      context: context,
-      builder: (BuildContext context) {
-        return ConstrainedBox(
-          constraints: BoxConstraints(
-            minWidth: MediaQuery.of(context).size.width,
-            minHeight: MediaQuery.of(context).size.height / 2,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              const Padding(
-                padding: EdgeInsets.all(10.0),
-                child: Text(
-                  "Agregar producto",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(5.0),
-                child: Text(
-                  '${product.code} - ${product.description}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 3.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: <Widget>[
-                    IconButton(
-                        iconSize: 40.0,
-                        icon: const Icon(Icons.remove),
-                        onPressed: () {
-                          if (_quantity > 0) {
-                            setState(() => _quantity--);
-                            textEditingControllerQty.text =
-                                _quantity.toString();
-                          }
-                        }),
-                    SizedBox(
-                      width: 100,
-                      height: 60,
-                      child: TextField(
-                        textAlign: TextAlign.center,
-                        keyboardType: TextInputType.number,
-                        onChanged: (text) {
-                          setState(() {
-                            int? q = int.tryParse(text);
-                            if (q != null && q > 0) {
-                              setState(() => _quantity = q);
-                            }
-                          });
-                        },
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly
-                        ],
-                        controller: textEditingControllerQty,
-                      ),
-                    ),
-
-                    /* Text(
-                      _quantity.toString(),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),*/
-                    IconButton(
-                      iconSize: 40.0,
-                      icon: const Icon(Icons.add),
-                      onPressed: () {
-                        setState(() => _quantity++);
-                        textEditingControllerQty.text = _quantity.toString();
-                      },
-                    )
-                  ],
-                ),
-              ),
-              RaisedButton(
-                color: Colors.lightBlue,
-                textColor: Colors.white,
-                child: Text(
-                  "Agregar".toUpperCase(),
-                ),
-                onPressed: () => Navigator.of(context).pop(_quantity),
-              )
-            ],
-          ),
-        );
-      },
-    );
 
     if (qty != null) {
       int q = (qty);
