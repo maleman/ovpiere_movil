@@ -46,9 +46,9 @@ class _OrdersState extends State<Orders> {
         Partner("1", "Milton Aleman", "Managua, Monte Nebo #17"),
         "21.40", <OrderLine>[
       OrderLine(1, 10.50, 0.50, 11.00,
-          Product('A', 'A001', 'A fur alles', '10.50'), 1),
+          Product('A', 'A001', 'A fur alles', 10.50), 1),
       OrderLine(2, 8.90, 1.50, 10.40,
-          Product('B', 'B001', 'B fur kinder', '8.90'), 1)
+          Product('B', 'B001', 'B fur kinder',8.90), 1)
     ]));
 
     list.add(const Order(
@@ -56,9 +56,9 @@ class _OrdersState extends State<Orders> {
         Partner("2", "Karen Flores", "Managua, Casa Real #11"),
         "53.20", <OrderLine>[
       OrderLine(1, 10.50, 0.50, 22.00,
-          Product('A', 'A001', 'A fur alles', '10.50'), 2),
+          Product('A', 'A001', 'A fur alles', 10.50), 2),
       OrderLine(2, 8.90, 1.50, 31.20,
-          Product('B', 'B001', 'B fur kinder', '8.90'), 3)
+          Product('B', 'B001', 'B fur kinder', 8.90), 3)
     ]));
 
     return list;

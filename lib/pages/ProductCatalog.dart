@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'package:flutter/material.dart';
+import 'package:ovpiere_movil/pages/EditOrder.dart';
 import '../model/Order.dart';
 import '../model/Partner.dart';
 import '../model/Product.dart';
@@ -7,7 +8,9 @@ import '../widget/AddProductModalBottomSheet.dart';
 import '../widget/NoNamedIcon.dart';
 
 class ProductCatalog extends StatefulWidget {
-  const ProductCatalog({Key? key, Partner? partner, Order? order})
+  final Partner partner;
+
+  const ProductCatalog({Key? key, required this.partner, Order? order})
       : super(key: key);
 
   @override
@@ -22,17 +25,17 @@ class _ProductCatalogState extends State<ProductCatalog> {
   final myTextController = TextEditingController();
 
   final List<Product> allProduct = [
-    const Product('A', 'A001', 'A fur alles', '10.50'),
-    const Product('B', 'B001', 'B fur kinder', '8.90'),
-    const Product('C', 'C001', 'C fur Mann', '7.90'),
-    const Product('D', 'D001', 'D fur Frau', '15.90'),
-    const Product('E', 'E001', 'E fur kinder', '3.90'),
-    const Product('F', 'F001', 'F fur kinder', '3.90'),
-    const Product('G', 'G001', 'G fur Alles', '4.78'),
+    const Product('A', 'A001', 'A fur alles', 10.50),
+    const Product('B', 'B001', 'B fur kinder', 8.90),
+    const Product('C', 'C001', 'C fur Mann', 7.90),
+    const Product('D', 'D001', 'D fur Frau', 15.90),
+    const Product('E', 'E001', 'E fur kinder', 3.90),
+    const Product('F', 'F001', 'F fur kinder', 3.90),
+    const Product('G', 'G001', 'G fur Alles', 4.78),
   ];
 
   List<Product> _foundProducts = [];
-  final HashMap _cartProducts = HashMap<Product, int>();
+  final HashMap<Product, int> _cartProducts = HashMap<Product, int>();
 
   var textEditingControllerQty = TextEditingController();
 
@@ -88,21 +91,11 @@ class _ProductCatalogState extends State<ProductCatalog> {
                                 fit: BoxFit.cover,
                               ),
                             ),
-                            Text(
-                              _foundProducts[index].code,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                Text(_foundProducts[index].description,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                    ))
-                              ],
+                            ListTile(
+                              title: Text(_foundProducts[index].code),
+                              subtitle: Text(_foundProducts[index].description),
+                              trailing:
+                                  Text('C\$ ${_foundProducts[index].price}'),
                             )
                           ],
                         )
@@ -116,7 +109,16 @@ class _ProductCatalogState extends State<ProductCatalog> {
     );
   }
 
-  void _gotoOrderDetail() {}
+  void _gotoOrderDetail() {
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditOrder(
+            partner: widget.partner,
+            cartProducts: _cartProducts,
+          ),
+        ));
+  }
 
   AppBar getAppBarNotSearching(String title, Function startSearchFunction) {
     return AppBar(
@@ -209,13 +211,14 @@ class _ProductCatalogState extends State<ProductCatalog> {
   void _addProductToCart(Product product) async {
     int quantity = 0;
     if (_cartProducts.containsKey(product)) {
-      quantity = _cartProducts[product];
+      quantity =
+          ((_cartProducts[product] != null) ? _cartProducts[product] : 0)!;
     }
     int? qty = await showModalBottomSheet<int>(
         context: context,
         builder: (BuildContext context) {
           return AddProductModalBottomSheet(
-              product: product, quantity: quantity);
+              product: product, quantity: quantity.toInt());
         });
 
     if (qty != null) {

@@ -30,7 +30,6 @@ class MyApp extends StatelessWidget {
       ),
       routes: {
         Routes.ordersPage:(context) => const Orders(title: 'Ordenes'),
-        Routes.editOrdersPage: (context) => const EditOrder(),
       },
 
       home: const Orders(title: 'Pedidos movil'),
