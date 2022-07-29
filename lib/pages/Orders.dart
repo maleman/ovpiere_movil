@@ -113,7 +113,7 @@ class _OrdersState extends State<Orders> {
                             ),
                           ),
                         ],
-                      )
+                      ),
                     ],
                   ),
                 );
