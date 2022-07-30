@@ -1,16 +1,15 @@
-import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:ovpiere_movil/pages/EditOrder.dart';
 import '../model/Order.dart';
-import '../model/Partner.dart';
 import '../model/Product.dart';
+import '../service/CartOrderService.dart';
 import '../widget/AddProductModalBottomSheet.dart';
 import '../widget/NoNamedIcon.dart';
 
 class ProductCatalog extends StatefulWidget {
-  final Partner partner;
+  final CartOrderService cartOrderService;
 
-  const ProductCatalog({Key? key, required this.partner, Order? order})
+  const ProductCatalog({Key? key, required this.cartOrderService, Order? order})
       : super(key: key);
 
   @override
@@ -21,6 +20,7 @@ class ProductCatalog extends StatefulWidget {
 }
 
 class _ProductCatalogState extends State<ProductCatalog> {
+  int _cartProductCount = 0;
   bool _isSearching = false;
   final myTextController = TextEditingController();
 
@@ -35,7 +35,6 @@ class _ProductCatalogState extends State<ProductCatalog> {
   ];
 
   List<Product> _foundProducts = [];
-  final HashMap<Product, int> _cartProducts = HashMap<Product, int>();
 
   var textEditingControllerQty = TextEditingController();
 
@@ -45,6 +44,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
     setState(() {
       _isSearching = false;
       _foundProducts = allProduct;
+      _cartProductCount = widget.cartOrderService.getProductCount();
     });
   }
 
@@ -69,40 +69,39 @@ class _ProductCatalogState extends State<ProductCatalog> {
           ),
           itemBuilder: (context, index) {
             return Card(
-                elevation: 10.0,
                 child: GestureDetector(
-                  onTap: () {
-                    _addProductToCart(_foundProducts[index]);
-                  },
-                  child: Container(
-                    height: 200,
-                    decoration:
-                        BoxDecoration(borderRadius: BorderRadius.circular(20)),
-                    margin: const EdgeInsets.all(5),
-                    padding: const EdgeInsets.all(5),
-                    child: Stack(
+              onTap: () {
+                _addProductToCart(_foundProducts[index]);
+              },
+              child: Container(
+                height: 500,
+                decoration:
+                    BoxDecoration(borderRadius: BorderRadius.circular(20)),
+                margin: const EdgeInsets.all(5),
+                padding: const EdgeInsets.all(5),
+                child: Stack(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              child: Image.asset(
-                                'images/png/maleman.png',
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            ListTile(
-                              title: Text(_foundProducts[index].code),
-                              subtitle: Text(_foundProducts[index].description),
-                              trailing:
-                                  Text('C\$ ${_foundProducts[index].price}'),
-                            )
-                          ],
+                        Expanded(
+                          child: Image.asset(
+                            'images/png/maleman.png',
+                            fit: BoxFit.cover,
+                            height: 300,
+                          ),
+                        ),
+                        ListTile(
+                          title: Text(_foundProducts[index].code),
+                          subtitle: Text(_foundProducts[index].description),
+                          trailing: Text('C\$ ${_foundProducts[index].price}'),
                         )
                       ],
-                    ),
-                  ),
-                ));
+                    )
+                  ],
+                ),
+              ),
+            ));
           },
         ),
       ),
@@ -114,10 +113,13 @@ class _ProductCatalogState extends State<ProductCatalog> {
         context,
         MaterialPageRoute(
           builder: (context) => EditOrder(
-            partner: widget.partner,
-            cartProducts: _cartProducts,
+            cartOrderService: widget.cartOrderService,
           ),
-        ));
+        )).then((value) {
+      setState(() {
+        _cartProductCount = widget.cartOrderService.getProductCount();
+      });
+    });
   }
 
   AppBar getAppBarNotSearching(String title, Function startSearchFunction) {
@@ -135,7 +137,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
           },
           iconData: Icons.shopping_cart,
           text: '',
-          notificationCount: _cartProducts.length,
+          notificationCount: _cartProductCount,
         ),
       ],
     );
@@ -210,9 +212,8 @@ class _ProductCatalogState extends State<ProductCatalog> {
 
   void _addProductToCart(Product product) async {
     int quantity = 0;
-    if (_cartProducts.containsKey(product)) {
-      quantity =
-          ((_cartProducts[product] != null) ? _cartProducts[product] : 0)!;
+    if (widget.cartOrderService.getProductCart().containsKey(product)) {
+      quantity = widget.cartOrderService.getProductCart()[product] ?? 0;
     }
     int? qty = await showModalBottomSheet<int>(
         context: context,
@@ -222,9 +223,9 @@ class _ProductCatalogState extends State<ProductCatalog> {
         });
 
     if (qty != null) {
-      int q = (qty);
+      widget.cartOrderService.addProductToCart(product, qty);
       setState(() {
-        _cartProducts[product] = q;
+        _cartProductCount = widget.cartOrderService.getProductCount();
       });
     }
   }

@@ -2,30 +2,28 @@ import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:ovpiere_movil/model/OrderLine.dart';
-import 'package:ovpiere_movil/model/Partner.dart';
+import 'package:ovpiere_movil/service/CartOrderService.dart';
 import '../model/Product.dart';
+import '../widget/AddProductModalBottomSheet.dart';
+import '../widget/NoNamedIcon.dart';
 
 class EditOrder extends StatefulWidget {
-  final Partner partner;
-  final HashMap<Product, int> cartProducts;
+  final CartOrderService cartOrderService;
 
-  const EditOrder({Key? key, required this.partner, required this.cartProducts})
-      : super(key: key);
+  const EditOrder({Key? key, required this.cartOrderService}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _EditOrdersState();
 }
 
 class _EditOrdersState extends State<EditOrder> {
-  var numberFormat = NumberFormat("###.00", "en_US");
-  List<OrderLine> _lines = [];
-  final String _title = 'Agregar orden';
+  var numberFormat = NumberFormat("#,###.00", "en_US");
+  int _cartProductCount = 0;
   double _total = 0, _subTotal = 0, _totalTax = 0;
 
   @override
   Widget build(BuildContext context) {
-    setLines();
+    setTotal();
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -35,13 +33,13 @@ class _EditOrdersState extends State<EditOrder> {
               pinned: false,
               snap: false,
               flexibleSpace: FlexibleSpaceBar(
-                title: Text('Cliente: ${widget.partner.name}'),
+                title: Text(widget.cartOrderService.getPartner().name),
               ),
               actions: <Widget>[
-                IconButton(
-                  icon: const Icon(Icons.send_rounded),
-                  tooltip: 'Enviar Orden',
-                  onPressed: () {},
+                NoNamedIcon(
+                  onTap: () {},
+                  iconData: Icons.send,
+                  text: '',
                 ),
               ]),
           SliverList(
@@ -49,8 +47,12 @@ class _EditOrdersState extends State<EditOrder> {
               [
                 ListView.builder(
                   shrinkWrap: true,
-                  itemCount: _lines.length,
+                  itemCount:  _cartProductCount,
                   itemBuilder: (BuildContext context, int index) {
+                    Product product = widget.cartOrderService
+                        .getProductCart()
+                        .keys
+                        .elementAt(index);
                     return Card(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -67,11 +69,11 @@ class _EditOrdersState extends State<EditOrder> {
                                   fit: BoxFit.cover),
                             ),
                             title: Text(
-                                '${_lines[index].product.code} - ${_lines[index].product.description}'),
+                                '${product.code} - ${product.description}'),
                             subtitle:
-                                Text('Qty: ${_lines[index].quantity} UND'),
+                                Text('Qty: ${widget.cartOrderService.getProductCart()[product]} UND'),
                             trailing: Text(
-                              'SUB TOTAL: C\$ ${numberFormat.format(_lines[index].subTotal)}',
+                              'C\$${product.price}',
                               style:
                                   const TextStyle(fontWeight: FontWeight.bold),
                             ),
@@ -85,7 +87,9 @@ class _EditOrdersState extends State<EditOrder> {
                                 ),
                                 child: IconButton(
                                   icon: const Icon(Icons.edit),
-                                  onPressed: () {},
+                                  onPressed: () {
+                                    _updateFromCart(product);
+                                  },
                                 ),
                               ),
                               const SizedBox(width: 5),
@@ -96,7 +100,7 @@ class _EditOrdersState extends State<EditOrder> {
                                 child: IconButton(
                                   icon: const Icon(Icons.delete),
                                   onPressed: () {
-                                    _deleteFromCart(_lines[index]);
+                                    _deleteFromCart(product);
                                   },
                                 ),
                               ),
@@ -116,91 +120,84 @@ class _EditOrdersState extends State<EditOrder> {
               children: [
                 TableRow(children: [
                   const Padding(
-                    padding: EdgeInsets.fromLTRB(20.0, 0, 20.0, 0),
-                    child: Text("Sub total", textScaleFactor: 1.5),
+                    padding: EdgeInsets.fromLTRB(20.0, 10, 20.0, 0),
+                    child: Text("Sub total",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Colors.black45)),
                   ),
                   Padding(
-                      padding: const EdgeInsets.fromLTRB(20.0, 0, 20.0, 0),
+                      padding: const EdgeInsets.fromLTRB(20.0, 10, 20.0, 0),
                       child: Container(
                         alignment: Alignment.centerRight,
-                        child: Text('C\$ ${numberFormat.format(_subTotal)}',
-                            textScaleFactor: 1.5,
-                            style: const TextStyle(fontWeight: FontWeight.bold)),
+                        child: Text('C\$${numberFormat.format(_subTotal)}',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: Colors.black45)),
                       )),
                 ]),
                 TableRow(children: [
                   const Padding(
-                    padding: EdgeInsets.fromLTRB(20.0, 0, 20.0, 0),
-                    child: Text("Impuesto ", textScaleFactor: 1.5),
+                    padding: EdgeInsets.fromLTRB(20.0, 10, 20.0, 0),
+                    child: Text("Impuesto ",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Colors.black45)),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20.0, 0, 20.0, 0),
+                    padding: const EdgeInsets.fromLTRB(20.0, 10, 20.0, 0),
                     child: Container(
                       alignment: Alignment.centerRight,
-                      child: Text('C\$ ${numberFormat.format(_totalTax)}',
-                          textScaleFactor: 1.5,
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text('C\$${numberFormat.format(_totalTax)}',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: Colors.black45)),
                     ),
                   ),
                 ]),
                 TableRow(children: [
                   const Padding(
-                    padding: EdgeInsets.fromLTRB(20.0, 0, 20.0, 0),
-                    child: Text("Total"),
+                    padding: EdgeInsets.fromLTRB(20.0, 10, 20.0, 0),
+                    child: Text("Total",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                            color: Colors.black45)),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20.0, 0, 20.0, 0),
+                    padding: const EdgeInsets.fromLTRB(20.0, 10, 20.0, 0),
                     child: Container(
                       alignment: Alignment.centerRight,
-                      child: Text('C\$ ${numberFormat.format(_total)}',style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text('C\$${numberFormat.format(_total)}',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 24,
+                              color: Colors.black45)),
                     ),
                   ),
                 ])
               ],
             ),
-            /*child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                width: double.infinity,
-                height: 50,
-                color: Colors.blueAccent,
-                child: const Center(
-                  child: Text(
-                    'Footer',
-                    style: TextStyle(color: Colors.white, letterSpacing: 4),
-                  ),
-                ),
-              ),
-            ),*/
           )
         ],
       ),
     );
   }
 
-  void setLines() {
-    double totalLines = 0, totalSubTotal = 0, totalTax = 0 ;
-    List<OrderLine> oLines = [];
-    widget.cartProducts.forEach((key, value) {
-      double tax = 0, subTotal = 0, totalOrder = 0;
-      subTotal = (key.price * value);
-      tax = subTotal * 0.15;
-      totalOrder = subTotal + tax;
-      totalSubTotal = subTotal + totalSubTotal;
-      totalTax = tax + totalTax;
-      totalLines = totalOrder + totalLines;
-      oLines
-          .add(OrderLine(0, subTotal, tax, totalOrder, key, value.toDouble()));
-    });
+  void setTotal() {
     setState(() {
-      _total = totalLines;
-      _totalTax = totalTax;
-      _subTotal = totalSubTotal;
-      _lines = oLines;
+      _total = widget.cartOrderService.getTotal();
+      _totalTax = widget.cartOrderService.getTaxTotal();
+      _subTotal = widget.cartOrderService.getSubTotal();
+      _cartProductCount = widget.cartOrderService.getProductCount();
     });
   }
 
-  void _deleteFromCart(OrderLine lin) {
+  void _deleteFromCart(Product product) {
     showDialog(
         context: context,
         builder: (BuildContext ctx) {
@@ -213,10 +210,8 @@ class _EditOrdersState extends State<EditOrder> {
               TextButton(
                   onPressed: () {
                     // Remove the box
-                    setState(() {
-                      _lines.remove(lin);
-                    });
-
+                    widget.cartOrderService.removeProductFromCart(product);
+                    setTotal();
                     // Close the dialog
                     Navigator.of(context).pop();
                   },
@@ -230,5 +225,24 @@ class _EditOrdersState extends State<EditOrder> {
             ],
           );
         });
+  }
+
+  void _updateFromCart(Product product) async {
+    int quantity = 0;
+    if (widget.cartOrderService.getProductCart().containsKey(product)) {
+      quantity = widget.cartOrderService.getProductCart()[product] ?? 0;
+    }
+    int? qty = await showModalBottomSheet<int>(
+        context: context,
+        builder: (BuildContext context) {
+          return AddProductModalBottomSheet(
+              product: product, quantity: quantity);
+        });
+
+    if (qty != null) {
+      int q = (qty);
+      widget.cartOrderService.addProductToCart(product, qty);
+      setTotal();
+    }
   }
 }

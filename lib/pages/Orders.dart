@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ovpiere_movil/model/OrderLine.dart';
 import 'package:ovpiere_movil/model/Partner.dart';
 import 'package:ovpiere_movil/model/Product.dart';
+import 'package:ovpiere_movil/service/CartOrderService.dart';
 
 import '../model/Order.dart';
 import 'PartnerCatalog.dart';
@@ -34,7 +35,10 @@ class _OrdersState extends State<Orders> {
     //setState(() => _counter++);
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const PartnerCatalog()),
+      MaterialPageRoute(
+          builder: (context) => PartnerCatalog(
+                cartOrderService: CartOrderServiceImpl(),
+              )),
     );
   }
 
@@ -45,20 +49,20 @@ class _OrdersState extends State<Orders> {
         "1",
         Partner("1", "Milton Aleman", "Managua, Monte Nebo #17"),
         "21.40", <OrderLine>[
-      OrderLine(1, 10.50, 0.50, 11.00,
-          Product('A', 'A001', 'A fur alles', 10.50), 1),
-      OrderLine(2, 8.90, 1.50, 10.40,
-          Product('B', 'B001', 'B fur kinder',8.90), 1)
+      OrderLine(
+          1, 10.50, 0.50, 11.00, Product('A', 'A001', 'A fur alles', 10.50), 1),
+      OrderLine(
+          2, 8.90, 1.50, 10.40, Product('B', 'B001', 'B fur kinder', 8.90), 1)
     ]));
 
     list.add(const Order(
         "2",
         Partner("2", "Karen Flores", "Managua, Casa Real #11"),
         "53.20", <OrderLine>[
-      OrderLine(1, 10.50, 0.50, 22.00,
-          Product('A', 'A001', 'A fur alles', 10.50), 2),
-      OrderLine(2, 8.90, 1.50, 31.20,
-          Product('B', 'B001', 'B fur kinder', 8.90), 3)
+      OrderLine(
+          1, 10.50, 0.50, 22.00, Product('A', 'A001', 'A fur alles', 10.50), 2),
+      OrderLine(
+          2, 8.90, 1.50, 31.20, Product('B', 'B001', 'B fur kinder', 8.90), 3)
     ]));
 
     return list;

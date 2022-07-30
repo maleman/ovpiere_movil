@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'package:ovpiere_movil/pages/ProductCatalog.dart';
 import '../model/Partner.dart';
+import '../service/CartOrderService.dart';
 
 class PartnerCatalog extends StatefulWidget {
-  const PartnerCatalog({Key? key}) : super(key: key);
+  final CartOrderService cartOrderService;
+
+  const PartnerCatalog({Key? key, required this.cartOrderService})
+      : super(key: key);
 
   @override
   State<StatefulWidget> createState() {
@@ -111,9 +115,13 @@ class _PartnerCatalogState extends State<PartnerCatalog> {
 
   void onSearch() {
     List<Partner> result = [];
-    if(myTextController.text.isNotEmpty){
-      result = allPartners.where((partner) => partner.name.toLowerCase().contains(myTextController.text.toLowerCase())).toList();
-    }else{
+    if (myTextController.text.isNotEmpty) {
+      result = allPartners
+          .where((partner) => partner.name
+              .toLowerCase()
+              .contains(myTextController.text.toLowerCase()))
+          .toList();
+    } else {
       result = allPartners;
     }
 
@@ -145,16 +153,22 @@ class _PartnerCatalogState extends State<PartnerCatalog> {
                                   maxWidth: 64,
                                   maxHeight: 64,
                                 ),
-                                child: Image.asset('images/png/maleman.png', fit: BoxFit.cover),
+                                child: Image.asset('images/png/maleman.png',
+                                    fit: BoxFit.cover),
                               ),
                               title: Text(_foundPartners[index].name),
                               subtitle: Text(_foundPartners[index].description),
-                              onTap: (){
-                                Navigator.push(context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ProductCatalog(partner: _foundPartners[index]),
-                                  )
-                                );
+                              onTap: () {
+                                widget.cartOrderService
+                                    .setPartner(_foundPartners[index]);
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ProductCatalog(
+                                        cartOrderService:
+                                            widget.cartOrderService,
+                                      ),
+                                    ));
                               },
                             ),
                           ],
