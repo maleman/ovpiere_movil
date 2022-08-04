@@ -1,5 +1,5 @@
 class Product{
-  final String productId;
+  final int productId;
   final String code;
   final String description;
   final double price;
@@ -10,5 +10,11 @@ class Product{
   String toString() {
     // TODO: implement toString
     return '$code - $description';
+  }
+
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(json['productId'] as int,json['code'] as String,
+      json['description'] as String, json['price'] as double,
+    );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ovpiere_movil/pages/EditOrder.dart';
+import 'package:ovpiere_movil/service/ProductService.dart';
 import '../model/Order.dart';
 import '../model/Product.dart';
 import '../service/CartOrderService.dart';
@@ -23,18 +24,9 @@ class _ProductCatalogState extends State<ProductCatalog> {
   int _cartProductCount = 0;
   bool _isSearching = false;
   final myTextController = TextEditingController();
+  final ProductService productService = ProductServiceImpl();
 
-  final List<Product> allProduct = [
-    const Product('A', 'A001', 'A fur alles', 10.50),
-    const Product('B', 'B001', 'B fur kinder', 8.90),
-    const Product('C', 'C001', 'C fur Mann', 7.90),
-    const Product('D', 'D001', 'D fur Frau', 15.90),
-    const Product('E', 'E001', 'E fur kinder', 3.90),
-    const Product('F', 'F001', 'F fur kinder', 3.90),
-    const Product('G', 'G001', 'G fur Alles', 4.78),
-  ];
-
-  List<Product> _foundProducts = [];
+  late Future<List<Product>> _foundProducts;
 
   var textEditingControllerQty = TextEditingController();
 
@@ -43,7 +35,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
     super.initState();
     setState(() {
       _isSearching = false;
-      _foundProducts = allProduct;
+      _foundProducts = productService.getProducts();
       _cartProductCount = widget.cartOrderService.getProductCount();
     });
   }
@@ -56,54 +48,65 @@ class _ProductCatalogState extends State<ProductCatalog> {
           ? getAppBarSearching(onSearchCancel, onSearch, myTextController)
           : getAppBarNotSearching("Catalogo", startSearching),
       body: Center(
-        child: GridView.builder(
-          shrinkWrap: true,
-          padding: const EdgeInsets.symmetric(horizontal: 30),
-          itemCount: _foundProducts.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 1.0,
-            crossAxisSpacing: 0.0,
-            mainAxisSpacing: 5,
-            mainAxisExtent: 200,
-          ),
-          itemBuilder: (context, index) {
-            return Card(
-                child: GestureDetector(
-              onTap: () {
-                _addProductToCart(_foundProducts[index]);
-              },
-              child: Container(
-                height: 500,
-                decoration:
-                    BoxDecoration(borderRadius: BorderRadius.circular(20)),
-                margin: const EdgeInsets.all(5),
-                padding: const EdgeInsets.all(5),
-                child: Stack(
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(
-                          child: Image.asset(
-                            'images/png/maleman.png',
-                            fit: BoxFit.cover,
-                            height: 300,
-                          ),
+        child: FutureBuilder<List<Product>>(
+            future: _foundProducts,
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return GridView.builder(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(horizontal: 30),
+                  itemCount: snapshot.data?.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 1,
+                    childAspectRatio: 1.0,
+                    crossAxisSpacing: 0.0,
+                    mainAxisSpacing: 5,
+                    mainAxisExtent: 200,
+                  ),
+                  itemBuilder: (context, index) {
+                    return Card(
+                        child: GestureDetector(
+                      onTap: () {
+                        _addProductToCart(snapshot.data![index]);
+                      },
+                      child: Container(
+                        height: 500,
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20)),
+                        margin: const EdgeInsets.all(5),
+                        padding: const EdgeInsets.all(5),
+                        child: Stack(
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
+                                  child: Image.asset(
+                                    'images/png/maleman.png',
+                                    fit: BoxFit.cover,
+                                    height: 300,
+                                  ),
+                                ),
+                                ListTile(
+                                  title: Text(snapshot.data![index].code),
+                                  subtitle:
+                                      Text(snapshot.data![index].description),
+                                  trailing: Text(
+                                      'C\$ ${snapshot.data![index].price}'),
+                                )
+                              ],
+                            )
+                          ],
                         ),
-                        ListTile(
-                          title: Text(_foundProducts[index].code),
-                          subtitle: Text(_foundProducts[index].description),
-                          trailing: Text('C\$ ${_foundProducts[index].price}'),
-                        )
-                      ],
-                    )
-                  ],
-                ),
-              ),
-            ));
-          },
-        ),
+                      ),
+                    ));
+                  },
+                );
+              } else if (snapshot.hasError) {
+                return Text('${snapshot.error}');
+              }
+              return const CircularProgressIndicator();
+            }),
       ),
     );
   }
@@ -183,25 +186,18 @@ class _ProductCatalogState extends State<ProductCatalog> {
   void onSearchCancel() {
     setState(() {
       _isSearching = false;
-      _foundProducts = allProduct;
+      _foundProducts = productService.getProducts();
     });
   }
 
   void onSearch() {
     List<Product> result = [];
     if (myTextController.text.isNotEmpty) {
-      result = allProduct
-          .where((product) => product.description
-              .toLowerCase()
-              .contains(myTextController.text.toLowerCase()))
-          .toList();
-    } else {
-      _foundProducts = allProduct;
+      setState(() {
+        _foundProducts =
+            productService.getProductsByQuery(myTextController.text);
+      });
     }
-
-    setState(() {
-      _foundProducts = result;
-    });
   }
 
   @override

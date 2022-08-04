@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:ovpiere_movil/pages/ProductCatalog.dart';
+import 'package:ovpiere_movil/service/PartnerService.dart';
 import '../model/Partner.dart';
 import '../service/CartOrderService.dart';
 
@@ -22,18 +23,10 @@ class _PartnerCatalogState extends State<PartnerCatalog> {
   bool _isPressed = false;
   final myTextController = TextEditingController();
 
-  final List<Partner> allPartners = [
-    const Partner("1", "Milton Aleman", "Managua, Monte Nebo #17"),
-    const Partner("2", "Karen Flores", "Managua, Casa Real #11"),
-    const Partner("3", "Jose I. Rostran",
-        "Managua, El Riguero Stward park 1c abajo 1/2 al sur"),
-    const Partner("4", "Hernaldo Mr. H", "Managua, Casa Real #11"),
-    const Partner("5", "La Colonia", "Super Mercado La Colonia"),
-    const Partner("6", "La Union", "Super Mercado La Union"),
-    const Partner("6", "Maxi Pali", "Super Mercado Maxi Pali"),
-  ];
+  late List<Partner> allPartners;
+  late Future<List<Partner>> _foundPartners;
 
-  List<Partner> _foundPartners = [];
+  final PartnerService partnerService = PartnerServiceImpl();
 
   @override
   void initState() {
@@ -41,7 +34,7 @@ class _PartnerCatalogState extends State<PartnerCatalog> {
     setState(() {
       _isSearching = false;
       _isPressed = false;
-      _foundPartners = allPartners;
+      _foundPartners = partnerService.getPartners();
     });
   }
 
@@ -109,36 +102,81 @@ class _PartnerCatalogState extends State<PartnerCatalog> {
   void onSearchCancel() {
     setState(() {
       _isSearching = false;
-      _foundPartners = allPartners;
+      _foundPartners = partnerService.getPartners();
     });
   }
 
   void onSearch() {
     List<Partner> result = [];
     if (myTextController.text.isNotEmpty) {
-      result = allPartners
-          .where((partner) => partner.name
-              .toLowerCase()
-              .contains(myTextController.text.toLowerCase()))
-          .toList();
-    } else {
-      result = allPartners;
+      setState(() {
+        _foundPartners = partnerService.getPartnersByQuery(myTextController.text);
+      });
     }
-
-    setState(() {
-      _foundPartners = result;
-    });
   }
 
   Widget _getBody() {
+    return Center(
+        child: FutureBuilder<List<Partner>>(
+      future: _foundPartners,
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return ListView.builder(
+            itemCount: snapshot.data?.length,
+            itemBuilder: (context, index) {
+              return Card(
+                color: _isPressed ? Colors.blueAccent : Colors.white,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    ListTile(
+                      leading: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minWidth: 44,
+                          minHeight: 44,
+                          maxWidth: 64,
+                          maxHeight: 64,
+                        ),
+                        child: Image.asset('images/png/maleman.png',
+                            fit: BoxFit.cover),
+                      ),
+                      title: Text(snapshot.data![index].name),
+                      subtitle: Text(snapshot.data![index].description),
+                      onTap: () {
+                        widget.cartOrderService
+                            .setPartner(snapshot.data![index]);
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProductCatalog(
+                                cartOrderService:
+                                widget.cartOrderService,
+                              ),
+                            ));
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        } else if (snapshot.hasError) {
+          return Text('${snapshot.error}');
+        }
+        return const CircularProgressIndicator();
+      },
+    ));
+  }
+
+/*  Widget _getBody2() {
     return Padding(
       padding: const EdgeInsets.all(10),
       child: Column(
         children: <Widget>[
           Expanded(
-            child: _foundPartners.isNotEmpty
+            child: true
                 ? ListView.builder(
-                    itemCount: _foundPartners.length,
+                    itemCount: 0, //_foundPartners.length,
                     itemBuilder: (context, index) {
                       return Card(
                         color: _isPressed ? Colors.blueAccent : Colors.white,
@@ -184,7 +222,7 @@ class _PartnerCatalogState extends State<PartnerCatalog> {
         ],
       ),
     );
-  }
+  }*/
 
   @override
   void dispose() {

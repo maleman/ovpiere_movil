@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:ovpiere_movil/model/OrderLine.dart';
-import 'package:ovpiere_movil/model/Partner.dart';
-import 'package:ovpiere_movil/model/Product.dart';
 import 'package:ovpiere_movil/service/CartOrderService.dart';
+import 'package:ovpiere_movil/service/OrderService.dart';
 
 import '../model/Order.dart';
 import 'PartnerCatalog.dart';
@@ -19,17 +17,19 @@ class Orders extends StatefulWidget {
 }
 
 class _OrdersState extends State<Orders> {
+  OrderService orderService = OrderServiceImpl();
+  late Future<List<Order>> _orders;
+
   @override
   void initState() {
     super.initState();
     setState(() {
-      _orders = _generateOrdersEx();
-      _orderCount = _orders.length;
+      _orders = orderService.getOrders();
     });
   }
 
-  List<Order> _orders = <Order>[];
-  int _orderCount = 0;
+  //List<Order> _orders = <Order>[];
+  //int _orderCount = 0;
 
   void _goToAddOrder() {
     //setState(() => _counter++);
@@ -42,32 +42,6 @@ class _OrdersState extends State<Orders> {
     );
   }
 
-  List<Order> _generateOrdersEx() {
-    final list = <Order>[];
-
-    list.add(const Order(
-        "1",
-        Partner("1", "Milton Aleman", "Managua, Monte Nebo #17"),
-        "21.40", <OrderLine>[
-      OrderLine(
-          1, 10.50, 0.50, 11.00, Product('A', 'A001', 'A fur alles', 10.50), 1),
-      OrderLine(
-          2, 8.90, 1.50, 10.40, Product('B', 'B001', 'B fur kinder', 8.90), 1)
-    ]));
-
-    list.add(const Order(
-        "2",
-        Partner("2", "Karen Flores", "Managua, Casa Real #11"),
-        "53.20", <OrderLine>[
-      OrderLine(
-          1, 10.50, 0.50, 22.00, Product('A', 'A001', 'A fur alles', 10.50), 2),
-      OrderLine(
-          2, 8.90, 1.50, 31.20, Product('B', 'B001', 'B fur kinder', 8.90), 3)
-    ]));
-
-    return list;
-  }
-
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
@@ -75,54 +49,63 @@ class _OrdersState extends State<Orders> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: _orderCount == 0
-          ? const Center(
-              child: Text('No tienes nuevos pedidos.'),
-            )
-          : ListView.builder(
-              itemCount: _orderCount,
-              itemBuilder: (context, index) {
-                return Card(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      ListTile(
-                        title: Text('Order No. ${_orders[index].orderId}'),
-                        subtitle: Text(_orders[index].partner.name),
-                        trailing: Text(
-                          'TOTAL: C\$ ${_orders[index].totalOrder}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+      body: Center(
+        child: FutureBuilder<List<Order>>(
+            future: _orders,
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return ListView.builder(
+                  itemCount: snapshot.data?.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          Ink(
-                            decoration: const ShapeDecoration(
-                              shape: CircleBorder(),
-                            ),
-                            child: IconButton(
-                              icon: const Icon(Icons.edit),
-                              onPressed: () {},
+                          ListTile(
+                            title: Text(
+                                'Order No. ${snapshot.data![index].orderId}'),
+                            subtitle: Text(snapshot.data![index].partner.name),
+                            trailing: Text(
+                              'TOTAL: C\$ ${snapshot.data![index].totalOrder}',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
-                          const SizedBox(width: 5),
-                          Ink(
-                            decoration: const ShapeDecoration(
-                              shape: CircleBorder(),
-                            ),
-                            child: IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () {},
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: <Widget>[
+                              Ink(
+                                decoration: const ShapeDecoration(
+                                  shape: CircleBorder(),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () {},
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Ink(
+                                decoration: const ShapeDecoration(
+                                  shape: CircleBorder(),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.delete),
+                                  onPressed: () {},
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 );
-              },
-            ),
+              } else if (snapshot.hasError) {
+                return Text('${snapshot.error}');
+              }
+              return const CircularProgressIndicator();
+            }),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _goToAddOrder,
         tooltip: 'Increment',
